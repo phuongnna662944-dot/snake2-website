@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTH Coffee House - Premium Mobile Ordering App</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        turquoise: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Tinh chỉnh scrollbar cho mượt mà */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Hiệu ứng nổi bật mượt mà */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        @keyframes pulse-light {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .8; transform: scale(1.03); }
+        }
+        .animate-pulse-light {
+            animation: pulse-light 3s ease-in-out infinite;
+        }
+        /* Hiệu ứng Bounce cho Giỏ hàng */
+        @keyframes cart-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(-5deg); }
+        }
+        .cart-pop {
+            animation: cart-bounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        /* Hiệu ứng Confetti lúc đặt hàng thành công */
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #f2d74e;
+            position: absolute;
+            animation: confetti-fall 2.5s ease-out infinite;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(400px) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4 font-sans text-slate-800 antialiased selection:bg-turquoise-500 selection:text-white">
+
+    <!-- KHUNG ĐIỆN THOẠI MOCKUP ĐẲNG CẤP -->
+    <div class="relative w-full max-w-[412px] h-[840px] bg-slate-950 rounded-[55px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border-[10px] border-slate-800 overflow-hidden flex flex-col transition-all duration-300 hover:shadow-turquoise-500/10">
+        
+        <!-- Camera Tai Thỏ (Dynamic Island) -->
+        <div class="absolute top-2 left-1/2 transform -translate-x-1/2 w-28 h-6 bg-black rounded-full z-50 flex items-center justify-between px-3">
+            <span class="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800"></span>
+            <span class="text-[9px] text-turquoise-400 font-bold tracking-tight">UTH COFFEE</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+        </div>
+
+        <!-- Thanh Trạng Thái Điện Thoại -->
+        <div class="h-10 bg-white/95 backdrop-blur-md flex justify-between items-end px-7 pb-1 z-40 text-xs font-semibold text-slate-700 select-none">
+            <span id="phone-time">09:41</span>
+            <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-signal text-[10px]"></i>
+                <i class="fa-solid fa-wifi text-[10px]"></i>
+                <i class="fa-solid fa-battery-three-quarters text-xs text-turquoise-600"></i>
+            </div>
+        </div>
+
+        <!-- MÀN HÌNH CHÀO MỪNG (SPLASH SCREEN) -->
+        <div id="splash-screen" class="absolute inset-0 bg-gradient-to-br from-turquoise-700 via-turquoise-600 to-teal-800 z-50 flex flex-col items-center justify-between py-16 px-6 transition-all duration-700 ease-in-out">
+            <div class="flex flex-col items-center mt-20">
+                <!-- UTH Premium Logo -->
+                <div class="w-28 h-28 bg-white rounded-3xl shadow-xl shadow-teal-900/40 flex items-center justify-center p-4 mb-4 animate-float">
+                    <svg viewBox="0 0 100 100" class="w-full h-full text-turquoise-600" fill="currentColor">
+                        <!-- Cốc cà phê nghệ thuật kết hợp chữ UTH -->
+                        <path d="M20,30 C20,20 35,20 35,30 L35,55 C35,65 45,75 55,75 C65,75 75,65 75,55 L75,30 C75,20 90,20 90,30" stroke="currentColor" stroke-width="8" stroke-linecap="round" fill="none" />
+                        <path d="M35,45 L75,45" stroke="currentColor" stroke-width="8" stroke-linecap="round" />
+                        <path d="M45,30 C45,15 55,15 55,30" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none" />
+                        <!-- Lá trà trang trí -->
+                        <path d="M50,75 C35,80 30,95 50,95 C70,95 65,80 50,75 Z" fill="#0d9488" />
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-extrabold text-white tracking-wider mt-4">UTH COFFEE</h1>
+                <p class="text-turquoise-100 text-sm font-medium tracking-widest uppercase mt-1">House & Tea Bakery</p>
+            </div>
+
+            <div class="flex flex-col items-center w-full px-4">
+                <button onclick="dismissSplash()" class="w-full bg-white hover:bg-turquoise-50 text-turquoise-800 font-bold py-4 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group">
+                    <span>Khám phá thực đơn</span>
+                    <i class="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+                </button>
+                <span class="text-xs text-turquoise-200/80 mt-4">Đại học Giao thông Vận tải TP.HCM</span>
+            </div>
+        </div>
+
+        <!-- NỘI DUNG CHÍNH CỦA APP -->
+        <div id="main-app" class="flex-1 bg-slate-50 flex flex-col overflow-y-auto no-scrollbar relative pb-24">
+            
+            <!-- HEADER APP -->
+            <header class="sticky top-0 bg-white/90 backdrop-blur-md px-5 py-3 flex items-center justify-between border-b border-slate-100 z-30">
+                <div class="flex items-center gap-2.5">
+                    <!-- UTH Mini Logo -->
+                    <div class="w-10 h-10 bg-gradient-to-tr from-turquoise-500 to-teal-600 rounded-xl flex items-center justify-center p-1.5 shadow-md shadow-turquoise-500/20">
+                        <svg viewBox="0 0 100 100" class="w-full h-full text-white" fill="currentColor">
+                            <path d="M20,30 C20,20 35,20 35,30 L35,55 C35,65 45,75 55,75 C65,75 75,65 75,55 L75,30 C75,20 90,20 90,30" stroke="currentColor" stroke-width="10" stroke-linecap="round" fill="none" />
+                            <path d="M35,45 L75,45" stroke="currentColor" stroke-width="10" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-md font-extrabold text-slate-800 leading-tight">UTH COFFEE</h2>
+                        <span class="text-[10px] font-semibold text-turquoise-600 uppercase tracking-widest">Premium Coffee House</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleCart()" class="relative p-2.5 bg-turquoise-50 hover:bg-turquoise-100 text-turquoise-700 rounded-full transition-all active:scale-95" id="cart-btn">
+                        <i class="fa-solid fa-bag-shopping text-md"></i>
+                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white scale-0 transition-all duration-300">0</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- HERO BRAND BANNER (ẢNH THƯƠNG HIỆU LỚN) -->
+            <div class="px-4 pt-4">
+                <div class="relative h-44 rounded-3xl overflow-hidden shadow-md shadow-slate-200">
+                    <!-- Ảnh nền hạt cà phê chất lượng cao -->
+                    <img src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80" alt="UTH Coffee House Banner" class="w-full h-full object-cover brightness-[0.7] animate-pulse-light">
+                    <!-- Lớp phủ màu ngọc lam chuyển tiếp huyền ảo -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-turquoise-950/90 via-turquoise-900/60 to-transparent"></div>
+                    <!-- Nội dung bên trong Banner -->
+                    <div class="absolute inset-y-0 left-0 flex flex-col justify-between p-5 z-10 w-3/4">
+                        <span class="bg-turquoise-500/30 backdrop-blur-md text-turquoise-100 text-[10px] font-bold px-2.5 py-1 rounded-full border border-turquoise-400/30 self-start">
+                            <i class="fa-solid fa-mug-hot mr-1"></i>ĐẬM VỊ TỰ NHIÊN
+                        </span>
+                        <div>
+                            <h3 class="text-white text-xl font-extrabold leading-tight">Uống cực chill<br>Chill cùng UTH!</h3>
+                            <p class="text-turquoise-200 text-[11px] mt-1 font-medium"><i class="fa-solid fa-gift mr-1 text-yellow-400"></i>Nhập mã <strong class="text-white">UTHWELCOME</strong> giảm 15%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- THANH TÌM KIẾM SẢN PHẨM -->
+            <div class="px-4 mt-4">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="search-input" oninput="filterProducts()" placeholder="Tìm cà phê, trà dâu, bánh mì..." class="w-full bg-white border border-slate-200/80 rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-turquoise-500 focus:ring-2 focus:ring-turquoise-500/20 transition-all shadow-sm">
+                </div>
+            </div>
+
+            <!-- BỘ LỌC DANH MỤC TRỰC QUAN -->
+            <div class="mt-5">
+                <div class="flex items-center justify-between px-5 mb-2.5">
+                    <h4 class="text-sm font-bold text-slate-800">Danh Mục Thực Đơn</h4>
+                    <span class="text-xs font-semibold text-turquoise-600 hover:underline cursor-pointer">Xem tất cả</span>
+                </div>
+                <!-- Slider danh mục ngang -->
+                <div class="flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar" id="categories-container">
+                    <!-- Danh mục sẽ được sinh tự động bằng JS -->
+                </div>
+            </div>
+
+            <!-- THỰC ĐƠN SẢN PHẨM (MENU GRID) -->
+            <div class="px-4 mt-3">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-bold text-slate-800" id="current-category-title">Tất Cả Món Ngon</h4>
+                    <span class="text-xs text-slate-500" id="products-count">8 sản phẩm</span>
+                </div>
+                
+                <!-- Grid Sản Phẩm -->
+                <div class="grid grid-cols-2 gap-3.5" id="menu-grid">
+                    <!-- Các thẻ sản phẩm được thêm tự động bằng JS -->
+                </div>
+            </div>
+            
+            <!-- KHÔNG GIAN QUÁN - ĐIỂM ĐẶC SẮC CHÂN THỰC -->
+            <div class="px-4 mt-6 mb-4">
+                <h4 class="text-sm font-bold text-slate-800 mb-2">Không Gian UTH Coffee</h4>
+                <div class="bg-white rounded-3xl p-3 border border-slate-100 shadow-sm">
+                    <div class="relative h-32 rounded-2xl overflow-hidden mb-2">
+                        <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=500&q=80" alt="Không gian quán" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex items-center justify-between px-1">
+                        <div>
+                            <h5 class="text-xs font-bold text-slate-800">Cơ sở Nguyễn Văn Thương</h5>
+                            <p class="text-[10px] text-slate-400 mt-0.5"><i class="fa-solid fa-location-dot text-turquoise-500 mr-1"></i>Bình Thạnh, TP. Hồ Chí Minh</p>
+                        </div>
+                        <span class="text-[10px] bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-full border border-emerald-100">Đang Mở</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAV BAR (THANH ĐIỀU HƯỚNG DƯỚI) -->
+        <nav class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100 py-3.5 px-6 flex justify-between items-center z-40 shadow-[0_-5px_20px_rgba(0,0,0,0.03)] rounded-b-[45px]">
+            <button onclick="changeTab('home')" class="flex flex-col items-center gap-1 text-turquoise-600 transition-colors" id="tab-home">
+                <i class="fa-solid fa-house-chimney text-lg"></i>
+                <span class="text-[10px] font-bold">Trang chủ</span>
+            </button>
+            <button onclick="toggleCart()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-turquoise-600 transition-colors relative" id="tab-cart">
+                <i class="fa-solid fa-basket-shopping text-lg"></i>
+                <span class="text-[10px] font-bold">Giỏ hàng</span>
+                <span id="nav-cart-badge" class="absolute -top-1 right-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white hidden">0</span>
+            </button>
+            <button onclick="showPromoModal()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-turquoise-600 transition-colors">
+                <i class="fa-solid fa-ticket text-lg"></i>
+                <span class="text-[10px] font-bold">Ưu đãi</span>
+            </button>
+            <button onclick="showStoreModal()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-turquoise-600 transition-colors">
+                <i class="fa-solid fa-store text-lg"></i>
+                <span class="text-[10px] font-bold">Cửa hàng</span>
+            </button>
+        </nav>
+
+        <!-- DRAWER GIỎ HÀNG (SLIDE UP) -->
+        <div id="cart-drawer" class="absolute inset-0 bg-black/60 z-50 transition-all duration-300 opacity-0 pointer-events-none flex flex-col justify-end">
+            <!-- Backdrop Click Area -->
+            <div class="flex-1" onclick="toggleCart()"></div>
+            <!-- Drawer Content -->
+            <div class="bg-white rounded-t-[35px] max-h-[80%] flex flex-col transition-transform duration-350 translate-y-full transform shadow-[0_-10px_30px_rgba(0,0,0,0.15)] overflow-hidden" id="cart-content-wrapper">
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-shopping-cart text-turquoise-600 text-lg"></i>
+                        <h3 class="font-extrabold text-slate-800 text-md">Đơn Hàng Của Bạn</h3>
+                    </div>
+                    <button onclick="toggleCart()" class="p-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-500 rounded-full transition-colors">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+                
+                <!-- Danh sách sản phẩm trong giỏ hàng -->
+                <div class="flex-1 overflow-y-auto p-4 no-scrollbar space-y-3 min-h-[150px] max-h-[350px]" id="cart-items-list">
+                    <!-- Trạng thái giỏ hàng trống mặc định -->
+                    <div class="text-center py-10 flex flex-col items-center justify-center text-slate-400">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-coffee-bean text-slate-300 text-3xl"></i>
+                        </div>
+                        <p class="text-sm font-bold">Giỏ hàng đang trống rỗng</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Hãy thêm món ngon để tiếp tục đặt hàng</p>
+                    </div>
+                </div>
+
+                <!-- Tóm tắt chi phí & Đặt hàng -->
+                <div class="p-5 border-t border-slate-100 bg-white shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-xs text-slate-500 font-medium">
+                            <span>Tạm tính</span>
+                            <span id="cart-subtotal">0đ</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500 font-medium">
+                            <span>Phí giao hàng</span>
+                            <span id="cart-shipping">15,000đ</span>
+                        </div>
+                        <hr class="border-dashed border-slate-200">
+                        <div class="flex justify-between text-sm font-bold text-slate-800">
+                            <span>Tổng thanh toán</span>
+                            <span id="cart-total" class="text-turquoise-600">0đ</span>
+                        </div>
+                    </div>
+                    
+                    <button id="checkout-btn" onclick="openCheckoutModal()" disabled class="w-full bg-slate-300 text-slate-500 font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all cursor-not-allowed">
+                        <span>Đặt hàng ngay</span>
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL ĐẶT HÀNG & THANH TOÁN (ORDER & CHECKOUT MODAL) -->
+        <div id="checkout-modal" class="absolute inset-0 bg-black/60 z-50 transition-all duration-300 opacity-0 pointer-events-none flex flex-col justify-end">
+            <!-- Backdrop click area -->
+            <div class="flex-1" onclick="closeCheckoutModal()"></div>
+            <!-- Checkout Content Form -->
+            <div class="bg-white rounded-t-[35px] max-h-[90%] flex flex-col transition-transform duration-350 translate-y-full transform shadow-[0_-10px_30px_rgba(0,0,0,0.15)] overflow-hidden" id="checkout-content-wrapper">
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice text-turquoise-600 text-lg"></i>
+                        <h3 class="font-extrabold text-slate-800 text-md">Thông Tin Đặt Hàng</h3>
+                    </div>
+                    <button onclick="closeCheckoutModal()" class="p-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-500 rounded-full transition-colors">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-5 space-y-5 no-scrollbar">
+                    <!-- SỐ ĐIỆN THOẠI -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Số Điện Thoại Nhận Hàng *</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-phone absolute left-4 top-1/2 transform -translate-y-1/2 text-turquoise-500 text-sm"></i>
+                            <input type="tel" id="customer-phone" placeholder="Nhập số điện thoại của bạn" class="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-semibold focus:outline-none focus:border-turquoise-500 focus:bg-white transition-all">
+                        </div>
+                        <p id="phone-error" class="text-red-500 text-[10px] mt-1 font-semibold hidden">Vui lòng nhập số điện thoại hợp lệ (9-11 chữ số)</p>
+                    </div>
+
+                    <!-- GHI CHÚ ĐỊA CHỈ -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Địa Chỉ Nhận Hàng *</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-location-dot absolute left-4 top-4 text-turquoise-500 text-sm"></i>
+                            <textarea id="customer-address" placeholder="Số nhà, tên đường, phường..." rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-turquoise-500 focus:bg-white transition-all"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- PHƯƠNG THỨC THANH TOÁN (VISUAL SELECTOR) -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">Hình Thức Thanh Toán</label>
+                        <div class="space-y-2.5">
+                            <!-- Chuyển khoản -->
+                            <div onclick="selectPayment('transfer')" id="pay-transfer" class="flex items-center justify-between p-3.5 border-2 border-turquoise-500 bg-turquoise-50/50 rounded-2xl cursor-pointer transition-all hover:bg-turquoise-50/70">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-turquoise-100 text-turquoise-600 rounded-xl flex items-center justify-center">
+                                        <i class="fa-solid fa-building-columns text-md"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-800">Chuyển khoản Ngân hàng (QR)</p>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">Tạo mã QR VietQR tự động</p>
+                                    </div>
+                                </div>
+                                <div class="w-5 h-5 rounded-full border-2 border-turquoise-500 flex items-center justify-center">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-turquoise-500" id="dot-transfer"></div>
+                                </div>
+                            </div>
+
+                            <!-- Tiền mặt -->
+                            <div onclick="selectPayment('cash')" id="pay-cash" class="flex items-center justify-between p-3.5 border border-slate-200 rounded-2xl cursor-pointer transition-all hover:bg-slate-50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
+                                        <i class="fa-solid fa-money-bill-wave text-md"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-800">Tiền mặt khi nhận hàng (COD)</p>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">Thanh toán khi shipper giao tới</p>
+                                    </div>
+                                </div>
+                                <div class="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-turquoise-500 hidden" id="dot-cash"></div>
+                                </div>
+                            </div>
+
+                            <!-- Thẻ tín dụng -->
+                            <div onclick="selectPayment('card')" id="pay-card" class="flex items-center justify-between p-3.5 border border-slate-200 rounded-2xl cursor-pointer transition-all hover:bg-slate-50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                                        <i class="fa-solid fa-credit-card text-md"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-800">Thẻ tín dụng / Ghi nợ</p>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">Hỗ trợ Visa, Mastercard, JCB</p>
+                                    </div>
+                                </div>
+                                <div class="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-turquoise-500 hidden" id="dot-card"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Đặt Hàng -->
+                <div class="p-5 border-t border-slate-100 bg-slate-50">
+                    <button onclick="submitOrder()" class="w-full bg-gradient-to-r from-turquoise-600 to-teal-700 hover:from-turquoise-700 hover:to-teal-800 text-white font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-turquoise-600/20 transform active:scale-95 transition-all">
+                        <i class="fa-solid fa-check-double"></i>
+                        <span>Xác nhận thanh toán (<span id="checkout-total-btn">0đ</span>)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MÀN HÌNH ĐẶT HÀNG THÀNH CÔNG (ORDER SUCCESS OVERLAY) -->
+        <div id="success-screen" class="absolute inset-0 bg-white z-50 transition-all duration-500 opacity-0 pointer-events-none flex flex-col items-center justify-center p-6 text-center">
+            <!-- Confetti container -->
+            <div id="confetti-container" class="absolute inset-0 overflow-hidden pointer-events-none"></div>
+
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-4xl mb-6 shadow-md shadow-emerald-100 animate-float">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            
+            <h3 class="text-xl font-extrabold text-slate-800">Đặt hàng thành công!</h3>
+            <p class="text-xs text-slate-500 mt-2 px-4 leading-relaxed">
+                Cảm ơn bạn đã lựa chọn <strong class="text-turquoise-600">UTH Coffee House</strong>. Đơn hàng của bạn đang được quán chuẩn bị kỹ lưỡng và giao sớm nhất!
+            </p>
+
+            <div class="my-6 p-4 bg-slate-50 rounded-2xl w-full max-w-xs border border-slate-100 text-left space-y-2">
+                <div class="flex justify-between text-xs">
+                    <span class="text-slate-400 font-medium">Mã đơn hàng:</span>
+                    <span class="font-extrabold text-slate-700">#UTH-92849</span>
+                </div>
+                <div class="flex justify-between text-xs">
+                    <span class="text-slate-400 font-medium">Số điện thoại:</span>
+                    <span id="display-success-phone" class="font-bold text-slate-700">0392xxxxxx</span>
+                </div>
+                <div class="flex justify-between text-xs">
+                    <span class="text-slate-400 font-medium">Thanh toán:</span>
+                    <span id="display-success-payment" class="font-semibold text-turquoise-600">Chuyển khoản QR</span>
+                </div>
+            </div>
+
+            <button onclick="resetApp()" class="w-full max-w-xs bg-turquoise-600 hover:bg-turquoise-700 text-white font-bold py-4 rounded-2xl transition-all shadow-md shadow-turquoise-600/10">
+                Quay lại Trang Chủ
+            </button>
+        </div>
+
+        <!-- MODAL ƯU ĐÃI (PROMO MODAL) -->
+        <div id="promo-modal" class="absolute inset-0 bg-black/60 z-50 flex items-center justify-center p-5 hidden">
+            <div class="bg-white rounded-3xl w-full max-w-xs overflow-hidden shadow-2xl relative animate-float">
+                <div class="bg-gradient-to-r from-turquoise-500 to-teal-600 p-5 text-white text-center">
+                    <h3 class="font-extrabold text-lg">Mã Ưu Đãi Độc Quyền</h3>
+                    <p class="text-xs text-turquoise-100 mt-1">Chỉ dành riêng cho thành viên UTH</p>
+                </div>
+                <div class="p-5 space-y-3.5">
+                    <div class="border-2 border-dashed border-turquoise-200 bg-turquoise-50/30 p-3 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800">UTHWELCOME</h4>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Giảm 15% cho đơn đầu tiên</p>
+                        </div>
+                        <button onclick="applyPromoCode('UTHWELCOME')" class="bg-turquoise-600 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-xl hover:bg-turquoise-700 transition-colors">Áp dụng</button>
+                    </div>
+                    <div class="border-2 border-dashed border-slate-200 bg-slate-50 p-3 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800">UTHFREESHIP</h4>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Miễn phí giao hàng bán kính 2km</p>
+                        </div>
+                        <button onclick="applyPromoCode('UTHFREESHIP')" class="bg-turquoise-600 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-xl hover:bg-turquoise-700 transition-colors">Áp dụng</button>
+                    </div>
+                </div>
+                <div class="p-4 border-t border-slate-100 text-center">
+                    <button onclick="closePromoModal()" class="text-xs font-bold text-slate-400 hover:text-slate-600">Đóng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- THÔNG BÁO POPUP THAY CHO ALERT -->
+        <div id="toast" class="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-4 py-3.5 rounded-2xl shadow-lg flex items-center gap-2 z-50 pointer-events-none opacity-0 transition-opacity duration-300">
+            <i class="fa-solid fa-circle-info text-turquoise-400"></i>
+            <span id="toast-message">Đã thêm vào giỏ hàng!</span>
+        </div>
+    </div>
+
+    <!-- SCRIPT ĐIỀU KHIỂN LOGIC ĐẦY ĐỦ VÀ TRƠN TRU -->
+    <script>
+        // Thời gian thực của thiết bị
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('phone-time').innerText = `${hours}:${minutes}`;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Database Sản phẩm
+        const products = [
+            {
+                id: 'p1',
+                name: 'Cà Phê Sữa Đá Sài Gòn',
+                price: 29000,
+                rating: 4.9,
+                category: 'coffee',
+                image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=300&q=80',
+                desc: 'Đậm đà vị cà phê Robusta rang mộc thượng hạng hòa quyện sữa đặc béo ngậy.'
+            },
+            {
+                id: 'p2',
+                name: 'Bạc Xỉu UTH Đặc Biệt',
+                price: 32000,
+                rating: 4.8,
+                category: 'coffee',
+                image: 'https://images.unsplash.com/photo-1570968915860-54d5c301fc9f?auto=format&fit=crop&w=300&q=80',
+                desc: 'Vị béo thơm từ sữa, ngọt ngào hòa quyện cùng chút đắng nhẹ của cà phê phin.'
+            },
+            {
+                id: 'p3',
+                name: 'Latte Art Caramel',
+                price: 45000,
+                rating: 5.0,
+                category: 'coffee',
+                image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=300&q=80',
+                desc: 'Cà phê Espresso thơm ngát kết hợp bọt sữa mịn màng và sốt caramel ngọt ngào.'
+            },
+            {
+                id: 'p4',
+                name: 'Trà Đào Cam Sả Nhiệt Đới',
+                price: 39000,
+                rating: 4.7,
+                category: 'tea',
+                image: 'https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&w=300&q=80',
+                desc: 'Hương trà lài dịu mát kết hợp đào miếng tươi mọng, cam vàng và sả cây thơm nồng.'
+            },
+            {
+                id: 'p5',
+                name: 'Trà Dâu Tây Đông Du',
+                price: 42000,
+                rating: 4.9,
+                category: 'tea',
+                image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=300&q=80',
+                desc: 'Dâu tây Đà Lạt dầm ngọt thanh mát lạnh kết hợp cốt trà hảo hạng giải nhiệt tức thì.'
+            },
+            {
+                id: 'p6',
+                name: 'Matcha Đá Xay Trân Châu',
+                price: 49000,
+                rating: 4.8,
+                category: 'blended',
+                image: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=300&q=80',
+                desc: 'Bột matcha Uji Nhật Bản nguyên chất xay mịn với sữa tươi, phủ kem tươi mịn màng.'
+            },
+            {
+                id: 'p7',
+                name: 'Cà Phê Cốt Dừa Đá Xay',
+                price: 49000,
+                rating: 4.9,
+                category: 'blended',
+                image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=300&q=80',
+                desc: 'Sự kết hợp hoàn hảo giữa vị đắng đậm của Robusta và vị béo đặc trưng cốt dừa nguyên chất.'
+            },
+            {
+                id: 'p8',
+                name: 'Bánh Mì Que Pate Hải Phòng',
+                price: 15000,
+                rating: 4.9,
+                category: 'food',
+                image: 'https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=300&q=80',
+                desc: 'Bánh mì giòn rụm béo ngậy pate đặc sản chưng tay truyền thống, cay nồng tương ớt.'
+            }
+        ];
+
+        // Database Danh mục
+        const categories = [
+            { id: 'all', name: 'Tất cả', icon: 'fa-cube' },
+            { id: 'coffee', name: 'Cà phê', icon: 'fa-mug-hot' },
+            { id: 'tea', name: 'Trà trái cây', icon: 'fa-leaf' },
+            { id: 'blended', name: 'Đá xay', icon: 'fa-snowflake' },
+            { id: 'food', name: 'Món ăn nhẹ', icon: 'fa-bread-slice' }
+        ];
+
+        // State quản lý ứng dụng
+        let cart = [];
+        let activeCategory = 'all';
+        let searchQuery = '';
+        let activePayment = 'transfer';
+        let discountPercent = 0;
+        let freeShipping = false;
+
+        // Tải danh mục vào giao diện
+        function renderCategories() {
+            const container = document.getElementById('categories-container');
+            container.innerHTML = categories.map(cat => {
+                const isActive = cat.id === activeCategory;
+                return `
+                    <button onclick="selectCategory('${cat.id}')" class="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 ${
+                        isActive 
+                        ? 'bg-turquoise-600 text-white shadow-md shadow-turquoise-500/20 scale-105' 
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
+                    }">
+                        <i class="fa-solid ${cat.icon} ${isActive ? 'text-white' : 'text-turquoise-500'}"></i>
+                        <span>${cat.name}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Tải sản phẩm lên màn hình
+        function renderProducts() {
+            const grid = document.getElementById('menu-grid');
+            const filtered = products.filter(p => {
+                const matchCategory = activeCategory === 'all' || p.category === activeCategory;
+                const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.desc.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchCategory && matchSearch;
+            });
+
+            document.getElementById('products-count').innerText = `${filtered.length} sản phẩm`;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-2 text-center py-10">
+                        <i class="fa-solid fa-face-frown text-slate-300 text-3xl mb-2"></i>
+                        <p class="text-xs font-bold text-slate-500">Không tìm thấy sản phẩm phù hợp</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(p => {
+                return `
+                    <div class="bg-white rounded-[24px] overflow-hidden border border-slate-100 shadow-sm flex flex-col justify-between group transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+                        <div class="relative h-28 overflow-hidden bg-slate-100">
+                            <!-- Hình ảnh chất lượng cao -->
+                            <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <!-- Overlay Đánh giá -->
+                            <div class="absolute top-2 left-2 bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded-lg flex items-center gap-1">
+                                <i class="fa-solid fa-star text-[8px] text-amber-400"></i>
+                                <span class="text-[9px] text-white font-extrabold">${p.rating}</span>
+                            </div>
+                        </div>
+                        <div class="p-3 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h5 class="text-xs font-bold text-slate-800 line-clamp-1">${p.name}</h5>
+                                <p class="text-[9px] text-slate-400 mt-0.5 line-clamp-2 leading-tight">${p.desc}</p>
+                            </div>
+                            <div class="flex items-center justify-between mt-2.5 pt-1.5 border-t border-slate-50">
+                                <span class="text-xs font-extrabold text-turquoise-600">${formatCurrency(p.price)}</span>
+                                <button onclick="addToCart('${p.id}')" class="w-7 h-7 bg-turquoise-50 hover:bg-turquoise-600 text-turquoise-600 hover:text-white rounded-full flex items-center justify-center transition-all duration-300 active:scale-75 shadow-sm">
+                                    <i class="fa-solid fa-plus text-[11px] font-black"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Định dạng tiền tệ VND
+        function formatCurrency(num) {
+            return num.toLocaleString('vi-VN') + 'đ';
+        }
+
+        // Hàm lọc danh mục
+        function selectCategory(catId) {
+            activeCategory = catId;
+            const categoryData = categories.find(c => c.id === catId);
+            document.getElementById('current-category-title').innerText = categoryData ? categoryData.name : 'Tất cả';
+            renderCategories();
+            renderProducts();
+        }
+
+        // Tìm kiếm sản phẩm
+        function filterProducts() {
+            searchQuery = document.getElementById('search-input').value;
+            renderProducts();
+        }
+
+        // Splash screen ẩn đi
+        function dismissSplash() {
+            const splash = document.getElementById('splash-screen');
+            splash.classList.add('opacity-0', 'pointer-events-none', 'scale-105');
+            setTimeout(() => {
+                splash.style.display = 'none';
+            }, 700);
+        }
+
+        // Thêm sản phẩm vào giỏ hàng
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const existingItem = cart.find(item => item.product.id === productId);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ product, quantity: 1 });
+            }
+
+            updateCartUI();
+            showToast(`Đã thêm ${product.name} vào giỏ hàng!`);
+
+            // Hiệu ứng Pop giỏ hàng
+            const cartBtn = document.getElementById('cart-btn');
+            cartBtn.classList.add('cart-pop');
+            setTimeout(() => cartBtn.classList.remove('cart-pop'), 400);
+        }
+
+        // Cập nhật giao diện giỏ hàng
+        function updateCartUI() {
+            const badge = document.getElementById('cart-badge');
+            const navBadge = document.getElementById('nav-cart-badge');
+            const list = document.getElementById('cart-items-list');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            const shippingEl = document.getElementById('cart-shipping');
+            const totalEl = document.getElementById('cart-total');
+            const checkoutBtn = document.getElementById('checkout-btn');
+
+            const totalCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+            // Cập nhật Huy hiệu
+            if (totalCount > 0) {
+                badge.innerText = totalCount;
+                badge.classList.remove('scale-0');
+                badge.classList.add('scale-100');
+                navBadge.innerText = totalCount;
+                navBadge.classList.remove('hidden');
+            } else {
+                badge.classList.remove('scale-100');
+                badge.classList.add('scale-0');
+                navBadge.classList.add('hidden');
+            }
+
+            // Tính tổng tiền
+            let subtotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+            let discount = subtotal * discountPercent;
+            let shippingFee = freeShipping ? 0 : 15000;
+            if (subtotal === 0) shippingFee = 0;
+            let total = subtotal - discount + shippingFee;
+
+            subtotalEl.innerText = formatCurrency(subtotal);
+            shippingEl.innerText = freeShipping ? '0đ (Đã giảm)' : formatCurrency(shippingFee);
+            totalEl.innerText = formatCurrency(total);
+            document.getElementById('checkout-total-btn').innerText = formatCurrency(total);
+
+            // Bật tắt nút đặt hàng
+            if (subtotal > 0) {
+                checkoutBtn.removeAttribute('disabled');
+                checkoutBtn.className = "w-full bg-gradient-to-r from-turquoise-600 to-teal-700 hover:from-turquoise-700 hover:to-teal-800 text-white font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-turquoise-500/20 transform active:scale-95 transition-all cursor-pointer";
+            } else {
+                checkoutBtn.setAttribute('disabled', 'true');
+                checkoutBtn.className = "w-full bg-slate-200 text-slate-400 font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all cursor-not-allowed";
+            }
+
+            // Vẽ danh sách vật phẩm
+            if (cart.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-10 flex flex-col items-center justify-center text-slate-400">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-mug-hot text-slate-300 text-2xl"></i>
+                        </div>
+                        <p class="text-xs font-bold">Giỏ hàng đang trống rỗng</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Hãy thêm món ngon để tiếp tục đặt hàng</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = cart.map(item => {
+                return `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <img src="${item.product.image}" alt="${item.product.name}" class="w-12 h-12 rounded-xl object-cover shadow-sm">
+                            <div>
+                                <h6 class="text-xs font-bold text-slate-800 line-clamp-1">${item.product.name}</h6>
+                                <p class="text-[10px] font-semibold text-turquoise-600 mt-0.5">${formatCurrency(item.product.price)}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2.5 bg-white px-2 py-1 rounded-xl border border-slate-100">
+                            <button onclick="changeQuantity('${item.product.id}', -1)" class="text-xs text-slate-400 hover:text-turquoise-600 px-1"><i class="fa-solid fa-minus"></i></button>
+                            <span class="text-xs font-extrabold text-slate-800">${item.quantity}</span>
+                            <button onclick="changeQuantity('${item.product.id}', 1)" class="text-xs text-slate-400 hover:text-turquoise-600 px-1"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Tăng giảm số lượng sản phẩm
+        function changeQuantity(productId, delta) {
+            const item = cart.find(item => item.product.id === productId);
+            if (!item) return;
+
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                cart = cart.filter(item => item.product.id !== productId);
+            }
+            updateCartUI();
+        }
+
+        // Toggle Hiện/Ẩn Giỏ hàng
+        function toggleCart() {
+            const drawer = document.getElementById('cart-drawer');
+            const content = document.getElementById('cart-content-wrapper');
+            const isHidden = drawer.classList.contains('opacity-0');
+
+            if (isHidden) {
+                drawer.classList.remove('opacity-0', 'pointer-events-none');
+                content.classList.remove('translate-y-full');
+            } else {
+                drawer.classList.add('opacity-0', 'pointer-events-none');
+                content.classList.add('translate-y-full');
+            }
+        }
+
+        // Mở màn hình Checkout đặt hàng
+        function openCheckoutModal() {
+            toggleCart(); // đóng giỏ hàng
+            const modal = document.getElementById('checkout-modal');
+            const content = document.getElementById('checkout-content-wrapper');
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('translate-y-full');
+        }
+
+        // Đóng màn hình Checkout đặt hàng
+        function closeCheckoutModal() {
+            const modal = document.getElementById('checkout-modal');
+            const content = document.getElementById('checkout-content-wrapper');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.add('translate-y-full');
+        }
+
+        // Lựa chọn Phương thức thanh toán
+        function selectPayment(method) {
+            activePayment = method;
+            
+            // Xóa hết trạng thái active cũ
+            ['transfer', 'cash', 'card'].forEach(m => {
+                const el = document.getElementById(`pay-${m}`);
+                const dot = document.getElementById(`dot-${m}`);
+                el.className = "flex items-center justify-between p-3.5 border border-slate-200 rounded-2xl cursor-pointer transition-all hover:bg-slate-50";
+                dot.classList.add('hidden');
+            });
+
+            // Gán trạng thái active mới
+            const activeEl = document.getElementById(`pay-${method}`);
+            const activeDot = document.getElementById(`dot-${method}`);
+            activeEl.className = "flex items-center justify-between p-3.5 border-2 border-turquoise-500 bg-turquoise-50/50 rounded-2xl cursor-pointer transition-all hover:bg-turquoise-50/70";
+            activeDot.classList.remove('hidden');
+        }
+
+        // Gửi Đơn Hàng (Thực hiện đặt hàng)
+        function submitOrder() {
+            const phoneInput = document.getElementById('customer-phone');
+            const addressInput = document.getElementById('customer-address');
+            const phoneError = document.getElementById('phone-error');
+            
+            const phone = phoneInput.value.trim();
+            const address = addressInput.value.trim();
+
+            // Validate số điện thoại (9-11 chữ số cơ bản)
+            const phoneRegex = /^[0-9]{9,11}$/;
+            if (!phoneRegex.test(phone)) {
+                phoneError.classList.remove('hidden');
+                phoneInput.classList.add('border-red-500', 'bg-red-50/30');
+                return;
+            } else {
+                phoneError.classList.add('hidden');
+                phoneInput.classList.remove('border-red-500', 'bg-red-50/30');
+            }
+
+            if (!address) {
+                showToast("Vui lòng nhập địa chỉ nhận hàng.");
+                return;
+            }
+
+            // Đóng Modal Checkout
+            closeCheckoutModal();
+
+            // Cập nhật thông tin lên màn hình đặt hàng thành công
+            document.getElementById('display-success-phone').innerText = phone;
+            let paymentText = "Chuyển khoản QR";
+            if (activePayment === 'cash') paymentText = "Tiền mặt (COD)";
+            if (activePayment === 'card') paymentText = "Thẻ Tín Dụng";
+            document.getElementById('display-success-payment').innerText = paymentText;
+
+            // Hiển thị màn hình thành công
+            const successScreen = document.getElementById('success-screen');
+            successScreen.classList.remove('opacity-0', 'pointer-events-none');
+            
+            // Tạo hiệu ứng Pháo hoa Confetti sinh động
+            createConfetti();
+        }
+
+        // Tạo hoạt ảnh pháo hoa hoa giấy bay mượt mà
+        function createConfetti() {
+            const container = document.getElementById('confetti-container');
+            container.innerHTML = '';
+            const colors = ['#0d9488', '#38bdf8', '#fbbf24', '#f43f5e', '#a855f7'];
+            
+            for (let i = 0; i < 50; i++) {
+                const div = document.createElement('div');
+                div.className = 'confetti';
+                div.style.left = Math.random() * 100 + '%';
+                div.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                div.style.transform = `scale(${Math.random() * 1.5 + 0.5})`;
+                div.style.animationDelay = Math.random() * 1.5 + 's';
+                div.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                container.appendChild(div);
+            }
+        }
+
+        // Hoàn tất đơn và Đặt lại App
+        function resetApp() {
+            cart = [];
+            discountPercent = 0;
+            freeShipping = false;
+            updateCartUI();
+            
+            // Ẩn màn hình thành công
+            const successScreen = document.getElementById('success-screen');
+            successScreen.classList.add('opacity-0', 'pointer-events-none');
+            
+            // Reset input
+            document.getElementById('customer-phone').value = '';
+            document.getElementById('customer-address').value = '';
+            document.getElementById('search-input').value = '';
+            searchQuery = '';
+            activeCategory = 'all';
+            
+            renderCategories();
+            renderProducts();
+        }
+
+        // Hiển thị thông báo Toast nhanh gọn, sang trọng
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 2500);
+        }
+
+        // Quản lý tab bên dưới (Nâng cao trải nghiệm người dùng)
+        function changeTab(tabName) {
+            if (tabName === 'home') {
+                showToast("Bạn đang ở trang chủ UTH Coffee House");
+            }
+        }
+
+        // Hiển thị Modal Ưu đãi
+        function showPromoModal() {
+            document.getElementById('promo-modal').classList.remove('hidden');
+        }
+
+        function closePromoModal() {
+            document.getElementById('promo-modal').classList.add('hidden');
+        }
+
+        function applyPromoCode(code) {
+            if (code === 'UTHWELCOME') {
+                discountPercent = 0.15;
+                showToast("Đã áp dụng mã UTHWELCOME giảm 15%!");
+            } else if (code === 'UTHFREESHIP') {
+                freeShipping = true;
+                showToast("Đã áp dụng mã miễn phí vận chuyển!");
+            }
+            closePromoModal();
+            updateCartUI();
+        }
+
+        // Mockup Cửa hàng
+        function showStoreModal() {
+            showToast("Hệ thống cửa hàng UTH luôn sẵn sàng phục vụ từ 7h00 - 22h00!");
+        }
+
+        // Khởi chạy ứng dụng
+        window.onload = function() {
+            renderCategories();
+            renderProducts();
+            updateCartUI();
+        }
+    </script>
+</body>
+</html>
