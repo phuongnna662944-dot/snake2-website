@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trạm Game Rắn Săn Mồi Retro PC Console</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Play:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Font chữ phong cách cổ điển */
+        .font-pixel {
+            font-family: 'VT323', monospace;
+        }
+        .font-mono-tech {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .font-play {
+            font-family: 'Play', sans-serif;
+        }
+
+        /* Hiệu ứng màn hình CRT bừng sáng */
+        .crt-monitor {
+            position: relative;
+            overflow: hidden;
+            border: 16px solid #2d3748;
+            border-radius: 24px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.75),
+                inset 0 0 40px rgba(0,0,0,1),
+                0 0 0 4px #4a5568,
+                0 15px 30px 10px rgba(0, 240, 255, 0.1);
+        }
+
+        /* Kính CRT cong nhẹ và dòng quét scanline */
+        .crt-monitor::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+            z-index: 10;
+            background-size: 100% 4px, 4px 100%;
+            pointer-events: none;
+        }
+
+        /* Hiệu ứng ánh sáng phosphor nhấp nháy mờ */
+        @keyframes crt-flicker {
+            0% { opacity: 0.995; }
+            50% { opacity: 0.990; }
+            100% { opacity: 0.995; }
+        }
+        .crt-screen {
+            animation: crt-flicker 0.15s infinite;
+            transition: all 0.4s ease;
+        }
+
+        /* Các bảng màu theme giả lập màn hình CRT */
+        .theme-classic { background-color: #0b1a0e; color: #39e75f; --glow: #39e75f; } /* Xanh lục bảo Hacker */
+        .theme-amber { background-color: #1a0f00; color: #ffb000; --glow: #ffb000; }     /* Vàng cam hổ phách */
+        .theme-cyan { background-color: #00121a; color: #00f0ff; --glow: #00f0ff; }      /* Xanh neon Neon */
+        .theme-matrix { background-color: #030303; color: #00ff66; --glow: #00ff66; }    /* Đen sâu tối giản */
+
+        /* Ánh hào quang cho văn bản */
+        .theme-classic .glow-text { text-shadow: 0 0 8px rgba(57, 231, 95, 0.6); }
+        .theme-amber .glow-text { text-shadow: 0 0 8px rgba(255, 176, 0, 0.6); }
+        .theme-cyan .glow-text { text-shadow: 0 0 8px rgba(0, 240, 255, 0.6); }
+        .theme-matrix .glow-text { text-shadow: 0 0 8px rgba(0, 255, 102, 0.6); }
+
+        /* Khung viền và nút bấm LED hiện đại */
+        .cyber-card {
+            background: linear-gradient(145deg, #111827 0%, #030712 100%);
+            border: 1px solid #1f2937;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        .custom-range::-webkit-slider-thumb {
+            background: #eab308;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-play overflow-x-hidden selection:bg-yellow-500 selection:text-black">
+
+    <!-- Thanh Taskbar OS giả lập phía trên -->
+    <header class="w-full bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-3 px-6 flex justify-between items-center shadow-md z-20">
+        <div class="flex items-center space-x-4">
+            <div class="flex space-x-1.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-red-500 inline-block"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-yellow-500 inline-block"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-green-500 inline-block"></span>
+            </div>
+            <div class="h-4 w-px bg-slate-800"></div>
+            <h1 class="text-lg md:text-xl font-bold tracking-wider font-mono-tech flex items-center space-x-2">
+                <span class="text-yellow-400">⚡</span>
+                <span class="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-500 bg-clip-text text-transparent">RETRO_SNAKE_OS_v2.0</span>
+            </h1>
+        </div>
+        
+        <!-- Bộ chọn màu màn hình nhanh & Đồng hồ hệ thống -->
+        <div class="flex items-center space-x-6">
+            <div class="hidden md:flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                <span class="text-xs text-slate-400 font-mono-tech">Màu CRT:</span>
+                <button onclick="changeTheme('classic')" class="w-4 h-4 rounded-full bg-[#39e75f] border border-slate-900 transition hover:scale-110" title="Classic Green"></button>
+                <button onclick="changeTheme('amber')" class="w-4 h-4 rounded-full bg-[#ffb000] border border-slate-900 transition hover:scale-110" title="Amber Terminal"></button>
+                <button onclick="changeTheme('cyan')" class="w-4 h-4 rounded-full bg-[#00f0ff] border border-slate-900 transition hover:scale-110" title="Synthwave Cyan"></button>
+                <button onclick="changeTheme('matrix')" class="w-4 h-4 rounded-full bg-[#00ff66] border border-slate-900 transition hover:scale-110" title="Deep Matrix"></button>
+            </div>
+            <div class="text-yellow-400 font-mono-tech font-bold text-sm" id="systemClock">12:00:00 PM</div>
+        </div>
+    </header>
+
+    <!-- Khu vực bàn làm việc chính (Desktop Workspace) -->
+    <main class="flex-grow w-full max-w-7xl mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- CỘT TRÁI (4/12): BẢNG ĐIỀU KHIỂN & CÀI ĐẶT HỆ THỐNG -->
+        <section class="lg:col-span-3 space-y-4">
+            <!-- Trạng thái người chơi & Điểm kỷ lục -->
+            <div class="cyber-card p-5 rounded-2xl relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-yellow-500/10 rounded-full blur-xl group-hover:bg-yellow-500/20 transition-all"></div>
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs text-yellow-500 font-mono-tech uppercase tracking-widest">Kỷ lục trạm</span>
+                    <span class="text-xs text-green-400 font-mono-tech bg-green-500/10 px-2 py-0.5 rounded-full">Trực tuyến</span>
+                </div>
+                <div class="text-3xl font-bold font-mono-tech text-white tracking-wider" id="globalHighScore">00000</div>
+                
+                <div class="h-px bg-slate-800 my-3"></div>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 font-mono-tech">Phiên chơi hiện tại:</span>
+                    <span class="text-sm font-bold text-slate-200" id="currentSessionId">SYS-7723</span>
+                </div>
+            </div>
+
+            <!-- Bảng cài đặt thông số vật lý -->
+            <div class="cyber-card p-5 rounded-2xl space-y-5">
+                <h3 class="text-sm font-bold text-slate-300 font-mono-tech tracking-wider border-b border-slate-800 pb-2 flex items-center">
+                    <span class="mr-2 text-yellow-400">⚙️</span> CẤU HÌNH CONSOLE
+                </h3>
+
+                <!-- Bật tắt xuyên tường -->
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="block text-sm font-semibold text-slate-200">Xuyên tường (Borders)</span>
+                        <span class="text-[11px] text-slate-400 block leading-tight">Vượt biên giới màn hình</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="wallCollisionToggle" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                    </label>
+                </div>
+
+                <!-- Thanh gạt tốc độ CPU -->
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="font-semibold text-slate-200">Chu kỳ xung (Speed)</span>
+                        <span id="speedValue" class="text-yellow-400 font-bold font-mono-tech">Vừa phải</span>
+                    </div>
+                    <input type="range" id="speedRange" min="1" max="5" value="3" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-yellow-500 custom-range">
+                    <div class="flex justify-between text-[10px] text-slate-500 font-mono-tech">
+                        <span>Min/Slow</span>
+                        <span>Normal</span>
+                        <span>Max/Hyper</span>
+                    </div>
+                </div>
+
+                <!-- Lựa chọn cấu trúc mồi -->
+                <div class="space-y-2">
+                    <span class="block text-sm font-semibold text-slate-200">Hình dạng cấu trúc mồi</span>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button onclick="setFoodType('pixel')" id="btnFoodPixel" class="py-1.5 px-1 text-xs rounded border border-yellow-500 bg-yellow-500/10 text-yellow-400 font-bold font-mono-tech transition">Pixel ⬛</button>
+                        <button onclick="setFoodType('apple')" id="btnFoodApple" class="py-1.5 px-1 text-xs rounded border border-slate-800 bg-slate-900 text-slate-400 font-mono-tech transition hover:bg-slate-800">Táo 🍎</button>
+                        <button onclick="setFoodType('bug')" id="btnFoodBug" class="py-1.5 px-1 text-xs rounded border border-slate-800 bg-slate-900 text-slate-400 font-mono-tech transition hover:bg-slate-800">Bọ 🐜</button>
+                    </div>
+                </div>
+
+                <!-- Âm thanh audio -->
+                <div class="flex justify-between items-center pt-2">
+                    <span class="text-sm font-semibold text-slate-200">Âm thanh Beep (8-bit)</span>
+                    <button id="soundBtn" onclick="toggleSound()" class="px-4 py-1.5 bg-yellow-500 text-black text-xs font-bold rounded-lg hover:bg-yellow-400 transition font-mono-tech">BẬT</button>
+                </div>
+            </div>
+
+            <!-- Phím tắt hướng dẫn điều khiển PC -->
+            <div class="cyber-card p-4 rounded-2xl text-xs text-slate-400 space-y-2">
+                <div class="font-bold text-slate-300 font-mono-tech uppercase mb-1">⌨️ Hệ phím máy tính</div>
+                <div class="flex justify-between"><span>Lên/Xuống/Trái/Phải:</span><span class="text-yellow-400">Phím Mũi Tên / W,A,S,D</span></div>
+                <div class="flex justify-between"><span>Tạm dừng (Pause):</span><span class="text-yellow-400">Phím P / ESC</span></div>
+                <div class="flex justify-between"><span>Đặt lại (Reset):</span><span class="text-yellow-400">Phím R</span></div>
+                <div class="flex justify-between"><span>Xoay màn màu:</span><span class="text-yellow-400">Phím Space (Cách)</span></div>
+            </div>
+        </section>
+
+        <!-- CỘT GIỮA (6/12): MÀN HÌNH CRT CHƠI GAME SIÊU LỚN -->
+        <section class="lg:col-span-6 flex flex-col items-center">
+            
+            <!-- Trạm giả lập Màn hình CRT máy tính để bàn -->
+            <div class="w-full crt-monitor">
+                
+                <!-- Mặt gương kính CRT -->
+                <div id="lcdScreen" class="crt-screen theme-classic p-4 flex flex-col justify-between aspect-[3/2] select-none relative">
+                    
+                    <!-- Dòng trạng thái hệ thống bên trong màn hình -->
+                    <div class="flex justify-between items-center text-xs border-b border-current/20 pb-2 mb-2 font-mono-tech">
+                        <div class="flex items-center space-x-2">
+                            <span class="animate-pulse">●</span>
+                            <span class="font-bold uppercase tracking-wider">MONITOR_FEED_01</span>
+                        </div>
+                        <div class="font-bold text-base tracking-widest text-center glow-text" id="scoreDisplay">SCORE: 00000</div>
+                        <div class="flex items-center space-x-2">
+                            <span id="speedIndicatorLCD" class="font-bold">CPU: 100MHz</span>
+                        </div>
+                    </div>
+
+                    <!-- Khu vực Canvas trò chơi chính -->
+                    <div class="relative flex-grow flex items-center justify-center bg-transparent border-2 border-current/10 rounded overflow-hidden">
+                        <!-- Canvas tỷ lệ rộng của PC -->
+                        <canvas id="gameCanvas" width="600" height="400" class="w-full h-full block bg-transparent"></canvas>
+
+                        <!-- Giao diện Menu Overlay che màn hình -->
+                        <div id="screenOverlay" class="absolute inset-0 bg-black/65 backdrop-blur-[2px] flex flex-col items-center justify-center text-center p-6 z-20">
+                            <div id="overlayContent" class="space-y-4 max-w-sm">
+                                <h3 id="overlayTitle" class="text-5xl font-extrabold font-pixel tracking-wider uppercase glow-text animate-pulse">SNAKE_OS</h3>
+                                <div class="h-1 w-24 bg-current mx-auto opacity-50 rounded-full"></div>
+                                <p id="overlayDesc" class="text-sm font-semibold font-mono-tech px-3 py-1.5 border border-current rounded bg-current/5">BẤM VÀO ĐÂY HOẶC PHÍM BẤT KỲ ĐỂ CHẠY HỆ THỐNG</p>
+                                <button id="overlayPlayBtn" onclick="startGame()" class="px-8 py-3 bg-current text-slate-950 font-bold rounded hover:scale-105 transition active:scale-95 font-mono-tech tracking-widest text-sm uppercase shadow-lg">KHỞI ĐỘNG (ENTER)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phía dưới cùng của màn hình CRT hiển thị chỉ số phụ -->
+                    <div class="flex justify-between items-center text-[11px] font-mono-tech border-t border-current/20 pt-2 mt-2">
+                        <div id="lcdModeIndicator" class="uppercase">WALL: ON</div>
+                        <div id="lcdStatsIndicator" class="uppercase">SNAKE SIZE: 4</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chân đế màn hình máy tính Retro phong cách cơ học -->
+            <div class="w-40 h-5 bg-slate-800 rounded-b-xl border-x-4 border-slate-700 shadow-lg relative">
+                <div class="absolute inset-x-0 bottom-0 h-1.5 bg-slate-900 rounded-b-xl"></div>
+            </div>
+            <div class="w-64 h-3 bg-slate-900 rounded-b-2xl border-t border-slate-700 shadow-md"></div>
+
+            <!-- Bảng phím tắt chức năng nhanh ngay dưới màn hình máy tính -->
+            <div class="w-full flex justify-center gap-4 mt-4 font-mono-tech">
+                <button onclick="pauseGame()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 border border-slate-800 hover:border-slate-700 text-yellow-400 font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2 transition">
+                    <span>⏸️</span> <span>TẠM DỪNG (P)</span>
+                </button>
+                <button onclick="resetGame()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 border border-slate-800 hover:border-slate-700 text-red-400 font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2 transition">
+                    <span>🔄</span> <span>ĐẶT LẠI (R)</span>
+                </button>
+                <button onclick="changeThemeNext()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 border border-slate-800 hover:border-slate-700 text-green-400 font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2 transition">
+                    <span>🌈</span> <span>ĐỔI MÀU (SPACE)</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- CỘT PHẢI (3/12): NHẬT KÝ HỆ THỐNG & ĐIỀU KHIỂN ARCADE GIẢ LẬP -->
+        <section class="lg:col-span-3 space-y-4 w-full">
+            <!-- Nhật ký thông báo (System Log Terminal) -->
+            <div class="cyber-card p-4 rounded-2xl">
+                <h3 class="text-sm font-bold text-slate-300 font-mono-tech tracking-wider border-b border-slate-800 pb-2 mb-3 flex items-center justify-between">
+                    <span class="flex items-center"><span class="mr-2 text-green-500">📟</span> NHẬT KÝ CONSOLE</span>
+                    <span class="text-[10px] text-slate-500" id="logCounter">LOGS: 0</span>
+                </h3>
+                <div id="systemLog" class="h-28 overflow-y-auto font-mono-tech text-[11px] space-y-1.5 text-slate-400 pr-1 select-none">
+                    <div class="text-slate-500">&gt; Khởi tạo hệ điều hành... OK</div>
+                    <div class="text-slate-500">&gt; Thiết bị âm thanh Web Audio... Sẵn sàng</div>
+                    <div class="text-slate-500">&gt; Lưới hiển thị 30x20... Sẵn sàng</div>
+                </div>
+            </div>
+
+            <!-- Bảng phím ảo dạng tay cầm máy game (Dành cho điện thoại / cảm ứng) -->
+            <div class="cyber-card p-5 rounded-2xl text-center">
+                <h3 class="text-xs font-bold text-slate-400 font-mono-tech tracking-wider uppercase mb-3">Phím Điều Hướng Di Động</h3>
+                <div class="grid grid-cols-3 gap-2 w-48 mx-auto">
+                    <!-- Trống -->
+                    <div></div>
+                    <!-- Phím Lên -->
+                    <button onclick="handleVirtualKey('UP')" class="h-12 bg-slate-800 hover:bg-slate-700 active:bg-yellow-500 active:text-black text-white font-bold rounded-xl flex items-center justify-center border border-slate-700 transition shadow-md active:scale-90">
+                        ▲
+                    </button>
+                    <!-- Trống -->
+                    <div></div>
+
+                    <!-- Phím Trái -->
+                    <button onclick="handleVirtualKey('LEFT')" class="h-12 bg-slate-800 hover:bg-slate-700 active:bg-yellow-500 active:text-black text-white font-bold rounded-xl flex items-center justify-center border border-slate-700 transition shadow-md active:scale-90">
+                        ◀
+                    </button>
+                    <!-- Phím Giữa OK -->
+                    <button onclick="triggerCenterButton()" class="h-12 bg-yellow-500 text-slate-950 hover:bg-yellow-400 font-extrabold rounded-xl flex items-center justify-center shadow-md active:scale-90 transition font-mono-tech text-xs">
+                        OK
+                    </button>
+                    <!-- Phím Phải -->
+                    <button onclick="handleVirtualKey('RIGHT')" class="h-12 bg-slate-800 hover:bg-slate-700 active:bg-yellow-500 active:text-black text-white font-bold rounded-xl flex items-center justify-center border border-slate-700 transition shadow-md active:scale-90">
+                        ▶
+                    </button>
+
+                    <!-- Trống -->
+                    <div></div>
+                    <!-- Phím Xuống -->
+                    <button onclick="handleVirtualKey('DOWN')" class="h-12 bg-slate-800 hover:bg-slate-700 active:bg-yellow-500 active:text-black text-white font-bold rounded-xl flex items-center justify-center border border-slate-700 transition shadow-md active:scale-90">
+                        ▼
+                    </button>
+                    <!-- Trống -->
+                    <div></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Thanh dưới cùng (Taskbar Bottom) -->
+    <footer class="w-full bg-slate-900 border-t border-slate-800 py-3 px-6 text-center text-xs text-slate-500 font-mono-tech flex flex-col md:flex-row justify-between items-center gap-2">
+        <p>© 2026 Retro PC Gaming System. Được tinh chỉnh với độ thẩm mỹ cao.</p>
+        <p class="text-slate-600">Phím điều khiển nhạy • Hỗ trợ Gamepad PC • Đèn LED hiển thị thời gian thực.</p>
+    </footer>
+
+    <!-- LOGIC TRÒ CHƠI HOÀN THIỆN -->
+    <script>
+        // --- 1. BIẾN TOÀN CỤC & SETUP KHỞI ĐẦU ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const lcdScreen = document.getElementById('lcdScreen');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const lcdModeIndicator = document.getElementById('lcdModeIndicator');
+        const lcdStatsIndicator = document.getElementById('lcdStatsIndicator');
+        const speedIndicatorLCD = document.getElementById('speedIndicatorLCD');
+        const globalHighScoreText = document.getElementById('globalHighScore');
+        const systemLog = document.getElementById('systemLog');
+        const logCounter = document.getElementById('logCounter');
+
+        // Phím cấu hình từ sidebar
+        const wallCollisionToggle = document.getElementById('wallCollisionToggle');
+        const speedRange = document.getElementById('speedRange');
+        const speedValue = document.getElementById('speedValue');
+        const soundBtn = document.getElementById('soundBtn');
+
+        // Màn hình overlay
+        const screenOverlay = document.getElementById('screenOverlay');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlayDesc = document.getElementById('overlayDesc');
+        const overlayPlayBtn = document.getElementById('overlayPlayBtn');
+
+        // Kích thước ô lưới pixel của game máy tính (Màn hình lớn: 600x400)
+        // Với GRID_SIZE = 20, ta có 30 ô chiều ngang và 20 ô chiều dọc
+        const GRID_SIZE = 20;
+        let tileCountX = canvas.width / GRID_SIZE; // 30
+        let tileCountY = canvas.height / GRID_SIZE; // 20
+
+        // Trạng thái Game
+        let snake = [];
+        let food = { x: 0, y: 0 };
+        let dx = GRID_SIZE; // Mặc định di chuyển sang phải
+        let dy = 0;
+        let nextDx = GRID_SIZE; // Chống lỗi tự quay 180 độ đột tử trong cùng một tick
+        let nextDy = 0;
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('pc_snake_high_score') || '0');
+        globalHighScoreText.textContent = highScore.toString().padStart(5, '0');
+
+        let isGameRunning = false;
+        let isPaused = false;
+        let isGameOver = false;
+        let gameInterval = null;
+        let soundEnabled = true;
+
+        // Cấu hình game mặc định
+        let wallCollision = true; // true = đụng biên là chết, false = đi xuyên biên
+        let currentSpeedLevel = 3; // Cấp độ 1-5
+        let foodType = 'pixel'; // 'pixel', 'apple', 'bug'
+        let currentTheme = 'classic';
+        const themes = ['classic', 'amber', 'cyan', 'matrix'];
+        let logsArray = [];
+
+        // --- HÀM THỜI GIAN THỰC TẾ & NHẬT KÝ ---
+
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // Đổi 0 thành 12
+            document.getElementById('systemClock').textContent = `${String(hours).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function addLog(text) {
+            const time = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+            logsArray.push(`[${time}] ${text}`);
+            if (logsArray.length > 50) logsArray.shift();
+
+            systemLog.innerHTML = logsArray.map(log => `<div>&gt; ${log}</div>`).join('');
+            systemLog.scrollTop = systemLog.scrollHeight;
+            logCounter.textContent = `LOGS: ${logsArray.length}`;
+        }
+
+        // Tạo chuỗi mã phiên chạy ngẫu nhiên đẹp mắt
+        document.getElementById('currentSessionId').textContent = "SYS-" + Math.floor(1000 + Math.random() * 9000);
+
+        // --- 2. BỘ PHÁT ÂM RETRO BẰNG WEB AUDIO API ---
+        let audioCtx = null;
+        function playBeep(frequency, duration) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'square'; // Sóng vuông tạo chất âm 8-bit cổ
+                oscillator.frequency.value = frequency;
+                
+                gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.log("Audio API Error: ", e);
+            }
+        }
+
+        // --- 3. KHỞI TẠO DỮ LIỆU GAME ---
+
+        function initGameData() {
+            // Đặt rắn ở giữa màn hình dài 4 đốt ban đầu
+            snake = [
+                { x: GRID_SIZE * 8, y: GRID_SIZE * 8 },
+                { x: GRID_SIZE * 7, y: GRID_SIZE * 8 },
+                { x: GRID_SIZE * 6, y: GRID_SIZE * 8 },
+                { x: GRID_SIZE * 5, y: GRID_SIZE * 8 }
+            ];
+            
+            dx = GRID_SIZE;
+            dy = 0;
+            nextDx = GRID_SIZE;
+            nextDy = 0;
+            score = 0;
+            isGameOver = false;
+            isPaused = false;
+            updateUI();
+            spawnFood();
+        }
+
+        function spawnFood() {
+            let valid = false;
+            let attempts = 0;
+            while (!valid && attempts < 200) {
+                food.x = Math.floor(Math.random() * tileCountX) * GRID_SIZE;
+                food.y = Math.floor(Math.random() * tileCountY) * GRID_SIZE;
+                
+                valid = true;
+                // Tránh mồi sinh trùng thân rắn
+                for (let part of snake) {
+                    if (part.x === food.x && part.y === food.y) {
+                        valid = false;
+                        break;
+                    }
+                }
+                attempts++;
+            }
+        }
+
+        function startGame() {
+            if (isGameRunning && !isGameOver) return;
+            
+            initGameData();
+            isGameRunning = true;
+            
+            // Ẩn lớp phủ màn hình menu
+            screenOverlay.classList.add('hidden');
+            
+            addLog("Bắt đầu trò chơi mới.");
+            playBeep(523.25, 0.1); // Đô (C5)
+            setTimeout(() => playBeep(659.25, 0.1), 100); // Mi (E5)
+            setTimeout(() => playBeep(783.99, 0.15), 200); // Sol (G5)
+
+            runGameLoop();
+        }
+
+        function runGameLoop() {
+            if (gameInterval) clearInterval(gameInterval);
+            
+            // Chuyển tốc độ sang chu kỳ mili giây
+            const speeds = {
+                1: 180, // Siêu rùa
+                2: 130, // Chậm
+                3: 85,  // Bình thường
+                4: 55,  // Nhanh
+                5: 35   // Siêu tốc
+            };
+            const intervalTime = speeds[currentSpeedLevel] || 85;
+
+            gameInterval = setInterval(() => {
+                if (!isPaused && !isGameOver) {
+                    updatePhysics();
+                    drawScreen();
+                }
+            }, intervalTime);
+        }
+
+        function pauseGame() {
+            if (!isGameRunning || isGameOver) return;
+            isPaused = !isPaused;
+            
+            if (isPaused) {
+                playBeep(261.63, 0.1); // C4
+                screenOverlay.classList.remove('hidden');
+                overlayTitle.textContent = "HỆ THỐNG DỪNG";
+                overlayDesc.textContent = "BẤM P / ESC HOẶC NÚT GIỮA ĐỂ TIẾP TỤC";
+                overlayPlayBtn.textContent = "TIẾP TỤC CHƠI";
+                addLog("Tạm dừng hệ thống.");
+            } else {
+                playBeep(523.25, 0.1); // C5
+                screenOverlay.classList.add('hidden');
+                addLog("Khôi phục hoạt động.");
+            }
+        }
+
+        function triggerCenterButton() {
+            if (!isGameRunning) {
+                startGame();
+            } else if (isGameOver) {
+                startGame();
+            } else {
+                pauseGame();
+            }
+        }
+
+        function resetGame() {
+            playBeep(196.00, 0.2); // G3
+            if (gameInterval) clearInterval(gameInterval);
+            isGameRunning = false;
+            isPaused = false;
+            isGameOver = false;
+            initGameData();
+            drawScreen();
+            
+            screenOverlay.classList.remove('hidden');
+            overlayTitle.textContent = "SNAKE_OS";
+            overlayDesc.textContent = "BẤM ENTER HOẶC NÚT BẤT KỲ ĐỂ BẮT ĐẦU";
+            overlayPlayBtn.textContent = "CHƠI NGAY";
+            addLog("Hệ thống đã thiết lập lại trạng thái rỗng.");
+        }
+
+        function triggerGameOver() {
+            isGameOver = true;
+            isGameRunning = false;
+            if (gameInterval) clearInterval(gameInterval);
+
+            // Âm sầu thảm
+            playBeep(220, 0.25);
+            setTimeout(() => playBeep(165, 0.35), 200);
+            setTimeout(() => playBeep(110, 0.5), 450);
+
+            addLog(`Trò chơi kết thúc! Đạt ${score} điểm.`);
+
+            // Lưu điểm cao kỷ lục
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('pc_snake_high_score', highScore);
+                globalHighScoreText.textContent = highScore.toString().padStart(5, '0');
+                playBeep(880, 0.6); // Âm chúc mừng kỷ lục mới
+                addLog(`KỶ LỤC MỚI ĐƯỢC THIẾT LẬP: ${highScore} ĐIỂM!`);
+            }
+
+            // Mở overlay báo tử
+            screenOverlay.classList.remove('hidden');
+            overlayTitle.textContent = "CRITICAL ERROR";
+            overlayDesc.textContent = `HỆ THỐNG SẬP - ĐIỂM SỐ: ${score}`;
+            overlayPlayBtn.textContent = "KHỞI ĐỘNG LẠI (ENTER)";
+        }
+
+        // --- 4. VẬT LÝ VÀ ĐIỀU HƯỚNG ---
+
+        function updatePhysics() {
+            dx = nextDx;
+            dy = nextDy;
+
+            // Tính toán vị trí đầu mới dựa theo vận tốc ô
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+            // Trạng thái va chạm tường biên
+            if (wallCollision) {
+                if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+                    triggerGameOver();
+                    return;
+                }
+            } else {
+                // Đi xuyên qua viền
+                if (head.x < 0) head.x = canvas.width - GRID_SIZE;
+                else if (head.x >= canvas.width) head.x = 0;
+
+                if (head.y < 0) head.y = canvas.height - GRID_SIZE;
+                else if (head.y >= canvas.height) head.y = 0;
+            }
+
+            // Tự ăn đuôi chính mình
+            for (let i = 0; i < snake.length; i++) {
+                if (snake[i].x === head.x && snake[i].y === head.y) {
+                    triggerGameOver();
+                    return;
+                }
+            }
+
+            // Thêm đầu mới vào đầu mảng thân
+            snake.unshift(head);
+
+            // Đầu chạm trúng mồi
+            const hasEatenFood = (head.x === food.x && head.y === food.y);
+            if (hasEatenFood) {
+                const pointsEarned = 10 + (currentSpeedLevel * 2);
+                score += pointsEarned;
+                updateUI();
+                playBeep(987.77, 0.08); // Si (B5) ngắn
+                
+                const foodNames = { 'pixel': 'Lõi Pixel', 'apple': 'Táo đỏ 🍎', 'bug': 'Bọ hệ thống 🐜' };
+                addLog(`Ăn trúng ${foodNames[foodType]}! Nhận +${pointsEarned} điểm.`);
+
+                spawnFood();
+            } else {
+                // Bớt đốt đuôi cuối
+                snake.pop();
+            }
+        }
+
+        // --- 5. HỌA SĨ CANVAS - ĐỒ HỌA SẮC NÉT ---
+
+        function drawScreen() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Lấy màu sắc đặc thù của theme hệ thống hiện tại
+            let themeColor = '#39e75f';
+            if (currentTheme === 'matrix') themeColor = '#00ff66';
+            else if (currentTheme === 'amber') themeColor = '#ffb000';
+            else if (currentTheme === 'cyan') themeColor = '#00f0ff';
+
+            ctx.fillStyle = themeColor;
+            ctx.strokeStyle = themeColor;
+
+            // Vẽ con rắn săn mồi
+            snake.forEach((part, index) => {
+                const isHead = index === 0;
+                
+                if (isHead) {
+                    // Vẽ đầu rắn bo góc bằng mảng màu nguyên đặc biệt
+                    ctx.fillStyle = themeColor;
+                    ctx.fillRect(part.x, part.y, GRID_SIZE, GRID_SIZE);
+                    
+                    // Vẽ hai mắt ngầu
+                    ctx.fillStyle = '#0b1a0e';
+                    if (currentTheme === 'matrix') ctx.fillStyle = '#030303';
+                    if (currentTheme === 'amber') ctx.fillStyle = '#1a0f00';
+                    if (currentTheme === 'cyan') ctx.fillStyle = '#00121a';
+
+                    // Điểm mắt dựa trên hướng đi của rắn
+                    if (dx > 0) { // Đi phải
+                        ctx.fillRect(part.x + 12, part.y + 4, 4, 4);
+                        ctx.fillRect(part.x + 12, part.y + 12, 4, 4);
+                    } else if (dx < 0) { // Đi trái
+                        ctx.fillRect(part.x + 4, part.y + 4, 4, 4);
+                        ctx.fillRect(part.x + 4, part.y + 12, 4, 4);
+                    } else if (dy > 0) { // Đi xuống
+                        ctx.fillRect(part.x + 4, part.y + 12, 4, 4);
+                        ctx.fillRect(part.x + 12, part.y + 12, 4, 4);
+                    } else if (dy < 0) { // Đi lên
+                        ctx.fillRect(part.x + 4, part.y + 4, 4, 4);
+                        ctx.fillRect(part.x + 12, part.y + 4, 4, 4);
+                    }
+                } else {
+                    // Vẽ thân đốt dạng xích retro
+                    ctx.fillStyle = themeColor;
+                    // Tạo viền cách quãng 1px cho cảm giác từng khối tách biệt
+                    ctx.fillRect(part.x + 1.5, part.y + 1.5, GRID_SIZE - 3, GRID_SIZE - 3);
+                    
+                    // Tạo khoảng trống rỗng ở tâm thân đốt
+                    ctx.fillStyle = '#0b1a0e';
+                    if (currentTheme === 'matrix') ctx.fillStyle = '#030303';
+                    if (currentTheme === 'amber') ctx.fillStyle = '#1a0f00';
+                    if (currentTheme === 'cyan') ctx.fillStyle = '#00121a';
+                    ctx.fillRect(part.x + 4, part.y + 4, GRID_SIZE - 8, GRID_SIZE - 8);
+                }
+            });
+
+            // Vẽ mồi
+            ctx.fillStyle = themeColor;
+            if (foodType === 'pixel') {
+                // Hạt cấu trúc ô lưới bừng sáng
+                ctx.fillRect(food.x + 2, food.y + 2, GRID_SIZE - 4, GRID_SIZE - 4);
+                ctx.fillStyle = '#0b1a0e';
+                if (currentTheme === 'matrix') ctx.fillStyle = '#030303';
+                if (currentTheme === 'amber') ctx.fillStyle = '#1a0f00';
+                if (currentTheme === 'cyan') ctx.fillStyle = '#00121a';
+                ctx.fillRect(food.x + 6, food.y + 6, GRID_SIZE - 12, GRID_SIZE - 12);
+            } else if (foodType === 'apple') {
+                // Vẽ quả táo đỏ bóng tròn sắc sảo
+                ctx.beginPath();
+                ctx.arc(food.x + 10, food.y + 11, 7, 0, 2 * Math.PI);
+                ctx.fill();
+                // Vẽ cuống lá của quả táo bằng nét mảng
+                ctx.fillRect(food.x + 9, food.y + 1, 2, 3);
+                ctx.fillRect(food.x + 11, food.y + 1, 2, 2);
+            } else if (foodType === 'bug') {
+                // Con bọ máy tính có chân và râu nhô ra
+                ctx.fillRect(food.x + 4, food.y + 4, GRID_SIZE - 8, GRID_SIZE - 8);
+                // Các chân nhỏ phụ họa
+                ctx.fillRect(food.x + 1, food.y + 3, 3, 2);
+                ctx.fillRect(food.x + 1, food.y + 9, 3, 2);
+                ctx.fillRect(food.x + 1, food.y + 15, 3, 2);
+
+                ctx.fillRect(food.x + 16, food.y + 3, 3, 2);
+                ctx.fillRect(food.x + 16, food.y + 9, 3, 2);
+                ctx.fillRect(food.x + 16, food.y + 15, 3, 2);
+            }
+        }
+
+        // --- 6. HỆ THỐNG LẮNG NGHE BÀN PHÍM & PHÍM ẢO ---
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toUpperCase();
+            
+            // Ngăn trình duyệt cuộn màn hình khi dùng các phím điều hướng chơi game
+            if (["ARROWUP", "ARROWDOWN", "ARROWLEFT", "ARROWRIGHT", " "].includes(e.key)) {
+                e.preventDefault();
+            }
+
+            // Kích hoạt chạy game khi đang ở màn hình chờ
+            if (!isGameRunning && (e.key === "Enter" || e.key === " ")) {
+                startGame();
+                return;
+            }
+
+            // Đổi hướng đi không cho phép bẻ 180 độ đột ngột đâm vào đuôi
+            if ((key === 'ARROWUP' || key === 'W') && dy === 0) {
+                nextDx = 0;
+                nextDy = -GRID_SIZE;
+            } else if ((key === 'ARROWDOWN' || key === 'S') && dy === 0) {
+                nextDx = 0;
+                nextDy = GRID_SIZE;
+            } else if ((key === 'ARROWLEFT' || key === 'A') && dx === 0) {
+                nextDx = -GRID_SIZE;
+                nextDy = 0;
+            } else if ((key === 'ARROWRIGHT' || key === 'D') && dx === 0) {
+                nextDx = GRID_SIZE;
+                nextDy = 0;
+            } else if (key === 'P' || e.key === 'Escape') {
+                pauseGame();
+            } else if (key === 'R') {
+                resetGame();
+            } else if (e.key === ' ') {
+                changeThemeNext();
+            }
+        });
+
+        // Điều khiển từ bàn phím ảo di động bên góc phải
+        function handleVirtualKey(direction) {
+            if (!isGameRunning) {
+                startGame();
+                return;
+            }
+            if (isPaused) {
+                pauseGame();
+                return;
+            }
+
+            playBeep(450, 0.03);
+
+            switch (direction) {
+                case 'UP':
+                    if (dy === 0) { nextDx = 0; nextDy = -GRID_SIZE; }
+                    break;
+                case 'DOWN':
+                    if (dy === 0) { nextDx = 0; nextDy = GRID_SIZE; }
+                    break;
+                case 'LEFT':
+                    if (dx === 0) { nextDx = -GRID_SIZE; nextDy = 0; }
+                    break;
+                case 'RIGHT':
+                    if (dx === 0) { nextDx = GRID_SIZE; nextDy = 0; }
+                    break;
+                case 'ENTER':
+                    triggerCenterButton();
+                    break;
+            }
+        }
+
+        // --- 7. CẬP NHẬT GIAO DIỆN & CÀI ĐẶT ---
+
+        function updateUI() {
+            scoreDisplay.textContent = `SCORE: ${score.toString().padStart(5, '0')}`;
+            lcdModeIndicator.textContent = wallCollision ? "WALL: ON" : "WALL: OFF";
+            lcdStatsIndicator.textContent = `SNAKE SIZE: ${snake.length}`;
+            speedIndicatorLCD.textContent = `CPU: ${currentSpeedLevel * 100}MHz`;
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                soundBtn.textContent = "BẬT";
+                soundBtn.className = "px-4 py-1.5 bg-yellow-500 text-black text-xs font-bold rounded-lg hover:bg-yellow-400 transition font-mono-tech";
+                playBeep(440, 0.08);
+                addLog("Bật hệ thống âm thanh.");
+            } else {
+                soundBtn.textContent = "TẮT";
+                soundBtn.className = "px-4 py-1.5 bg-slate-800 text-slate-400 text-xs font-bold rounded-lg hover:bg-slate-700 transition font-mono-tech";
+                addLog("Tắt âm thanh.");
+            }
+        }
+
+        function toggleWallCollision() {
+            wallCollision = !wallCollision;
+            wallCollisionToggle.checked = wallCollision;
+            updateUI();
+            playBeep(580, 0.05);
+            addLog(`Tường va chạm: ${wallCollision ? "Kích hoạt" : "Hủy bỏ (Xuyên tường)"}`);
+        }
+
+        // Đăng ký sự kiện nút chuyển đổi trên cột cài đặt
+        wallCollisionToggle.addEventListener('change', (e) => {
+            wallCollision = e.target.checked;
+            updateUI();
+            playBeep(580, 0.05);
+            addLog(`Tường va chạm: ${wallCollision ? "Kích hoạt" : "Hủy bỏ"}`);
+        });
+
+        // Thay đổi thang trượt tốc độ game
+        speedRange.addEventListener('input', (e) => {
+            currentSpeedLevel = parseInt(e.target.value);
+            
+            const speedLabels = {
+                1: '🐢 Chậm rãi',
+                2: '🐌 Tốc độ thấp',
+                3: '🐍 Vừa phải',
+                4: '⚡ Tốc độ cao',
+                5: '🔥 Siêu tốc'
+            };
+            speedValue.textContent = speedLabels[currentSpeedLevel];
+            updateUI();
+            playBeep(400 + currentSpeedLevel * 50, 0.04);
+            addLog(`Cấp xung nhịp CPU đổi thành cấp ${currentSpeedLevel}.`);
+
+            if (isGameRunning && !isPaused && !isGameOver) {
+                runGameLoop();
+            }
+        });
+
+        // Lựa chọn đổi hình dáng loại mồi ăn
+        function setFoodType(type) {
+            foodType = type;
+            playBeep(640, 0.05);
+
+            const btnPixel = document.getElementById('btnFoodPixel');
+            const btnApple = document.getElementById('btnFoodApple');
+            const btnBug = document.getElementById('btnFoodBug');
+
+            [btnPixel, btnApple, btnBug].forEach(b => {
+                b.className = "py-1.5 px-1 text-xs rounded border border-slate-800 bg-slate-900 text-slate-400 font-mono-tech transition hover:bg-slate-800";
+            });
+
+            if (type === 'pixel') {
+                btnPixel.className = "py-1.5 px-1 text-xs rounded border border-yellow-500 bg-yellow-500/10 text-yellow-400 font-bold font-mono-tech";
+            } else if (type === 'apple') {
+                btnApple.className = "py-1.5 px-1 text-xs rounded border border-yellow-500 bg-yellow-500/10 text-yellow-400 font-bold font-mono-tech";
+            } else if (type === 'bug') {
+                btnBug.className = "py-1.5 px-1 text-xs rounded border border-yellow-500 bg-yellow-500/10 text-yellow-400 font-bold font-mono-tech";
+            }
+
+            addLog(`Hình dáng thức ăn đổi thành: ${type.toUpperCase()}`);
+            drawScreen();
+        }
+
+        // Đổi màu nền chủ đề của màn hình giả lập
+        function changeTheme(themeName) {
+            currentTheme = themeName;
+            
+            // Xóa tất cả chủ đề cũ
+            lcdScreen.classList.remove('theme-classic', 'theme-amber', 'theme-cyan', 'theme-matrix');
+            
+            // Thêm chủ đề mới lựa chọn
+            lcdScreen.classList.add(`theme-${themeName}`);
+            
+            playBeep(750, 0.04);
+            addLog(`Chuyển hệ hiển thị màn hình màu: ${themeName.toUpperCase()}`);
+            drawScreen();
+        }
+
+        // Tự động xoay quanh 4 màu khi nhấn phím SPACE hoặc nút nhanh
+        function changeThemeNext() {
+            let currentIndex = themes.indexOf(currentTheme);
+            let nextIndex = (currentIndex + 1) % themes.length;
+            changeTheme(themes[nextIndex]);
+        }
+
+        // --- 8. KHỞI CHẠY HỆ THỐNG ---
+
+        window.onload = function () {
+            // Thiết lập thang trượt tốc độ ban đầu
+            speedRange.value = currentSpeedLevel;
+            speedValue.textContent = '🐍 Vừa phải';
+            
+            initGameData();
+            drawScreen();
+            addLog("Hệ điều hành Snake_OS đã khởi động thành công.");
+        }
+    </script>
+</body>
+</html>
